@@ -10,7 +10,7 @@ import (
 	connmgri "github.com/libp2p/go-libp2p-core/connmgr"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/ElrondNetwork/go-libp2p-pubsub/pb"
 )
 
 func TestTagTracerMeshTags(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/ElrondNetwork/go-libp2p-pubsub/pb"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )

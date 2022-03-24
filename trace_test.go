@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/ElrondNetwork/go-libp2p-pubsub/pb"
 
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -125,7 +125,7 @@ type traceStats struct {
 }
 
 func (t *traceStats) process(evt *pb.TraceEvent) {
-	//fmt.Printf("process event %s\n", evt.GetType())
+	// fmt.Printf("process event %s\n", evt.GetType())
 	switch evt.GetType() {
 	case pb.TraceEvent_PUBLISH_MESSAGE:
 		t.publish++
