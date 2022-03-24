@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/ElrondNetwork/go-libp2p-pubsub/pb"
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -152,7 +152,7 @@ func TestBasicFloodsub(t *testing.T) {
 		msgs = append(msgs, subch)
 	}
 
-	//connectAll(t, hosts)
+	// connectAll(t, hosts)
 	sparseConnect(t, hosts)
 
 	time.Sleep(time.Millisecond * 100)
