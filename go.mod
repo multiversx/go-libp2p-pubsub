@@ -11,6 +11,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.11.0
 	github.com/libp2p/go-libp2p-discovery v0.6.0
 	github.com/libp2p/go-libp2p-swarm v0.8.0
+	github.com/libp2p/go-libp2p-testing v0.5.0
 	github.com/libp2p/go-msgio v0.0.6
 	github.com/multiformats/go-multiaddr v0.4.0
 	github.com/whyrusleeping/timecache v0.0.0-20160911033111-cfcb2f1abfee
