@@ -351,7 +351,7 @@ loop:
 }
 
 func (v *validation) validateSignature(msg *Message) bool {
-	err := verifyMessageSignature(msg.Message)
+	err := VerifyMessageSignature(msg.Message)
 	if err != nil {
 		log.Debugf("signature verification error: %s", err.Error())
 		return false

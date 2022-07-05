@@ -36,7 +36,7 @@ func testSignVerify(t *testing.T, privk crypto.PrivKey) {
 		Seqno: []byte("123"),
 	}
 	signMessage(id, privk, &m)
-	err = verifyMessageSignature(&m)
+	err = VerifyMessageSignature(&m)
 	if err != nil {
 		t.Fatal(err)
 	}
