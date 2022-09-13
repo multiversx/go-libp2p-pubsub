@@ -46,6 +46,7 @@ func (policy MessageSignaturePolicy) mustSign() bool {
 
 const SignPrefix = "libp2p-pubsub:"
 
+// VerifyMessageSignature will verify the signature over the message
 func VerifyMessageSignature(m *pb.Message) error {
 	pubk, err := messagePubKey(m)
 	if err != nil {
