@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 
 	manet "github.com/multiformats/go-multiaddr/net"
 )
@@ -76,7 +76,7 @@ type peerScore struct {
 	// message delivery tracking
 	deliveries *messageDeliveries
 
-	msgID MsgIdFunction
+	idGen *msgIDGenerator
 	host  host.Host
 
 	// debugging inspection
@@ -88,6 +88,8 @@ type peerScore struct {
 var _ RawTracer = (*peerScore)(nil)
 
 type messageDeliveries struct {
+	seenMsgTTL time.Duration
+
 	records map[string]*deliveryRecord
 
 	// queue for cleaning up old delivery records
@@ -141,10 +143,11 @@ type TopicScoreSnapshot struct {
 // When this option is enabled, the supplied function will be invoked periodically to allow
 // the application to inspect or dump the scores for connected peers.
 // The supplied function can have one of two signatures:
-//  - PeerScoreInspectFn, which takes a map of peer IDs to score.
-//  - ExtendedPeerScoreInspectFn, which takes a map of peer IDs to
-//    PeerScoreSnapshots and allows inspection of individual score
-//    components for debugging peer scoring.
+//   - PeerScoreInspectFn, which takes a map of peer IDs to score.
+//   - ExtendedPeerScoreInspectFn, which takes a map of peer IDs to
+//     PeerScoreSnapshots and allows inspection of individual score
+//     components for debugging peer scoring.
+//
 // This option must be passed _after_ the WithPeerScore option.
 func WithPeerScoreInspect(inspect interface{}, period time.Duration) Option {
 	return func(ps *PubSub) error {
@@ -178,12 +181,16 @@ func WithPeerScoreInspect(inspect interface{}, period time.Duration) Option {
 
 // implementation
 func newPeerScore(params *PeerScoreParams) *peerScore {
+	seenMsgTTL := params.SeenMsgTTL
+	if seenMsgTTL == 0 {
+		seenMsgTTL = TimeCacheDuration
+	}
 	return &peerScore{
 		params:     params,
 		peerStats:  make(map[peer.ID]*peerStats),
 		peerIPs:    make(map[string]map[peer.ID]struct{}),
-		deliveries: &messageDeliveries{records: make(map[string]*deliveryRecord)},
-		msgID:      DefaultMsgIdFn,
+		deliveries: &messageDeliveries{seenMsgTTL: seenMsgTTL, records: make(map[string]*deliveryRecord)},
+		idGen:      newMsgIdGenerator(),
 	}
 }
 
@@ -239,7 +246,7 @@ func (ps *peerScore) Start(gs *GossipSubRouter) {
 		return
 	}
 
-	ps.msgID = gs.p.msgID
+	ps.idGen = gs.p.idGen
 	ps.host = gs.p.host
 	go ps.background(gs.p.ctx)
 }
@@ -689,7 +696,7 @@ func (ps *peerScore) ValidateMessage(msg *Message) {
 
 	// the pubsub subsystem is beginning validation; create a record to track time in
 	// the validation pipeline with an accurate firstSeen time.
-	_ = ps.deliveries.getRecord(ps.msgID(msg.Message))
+	_ = ps.deliveries.getRecord(ps.idGen.ID(msg))
 }
 
 func (ps *peerScore) DeliverMessage(msg *Message) {
@@ -698,7 +705,7 @@ func (ps *peerScore) DeliverMessage(msg *Message) {
 
 	ps.markFirstMessageDelivery(msg.ReceivedFrom, msg)
 
-	drec := ps.deliveries.getRecord(ps.msgID(msg.Message))
+	drec := ps.deliveries.getRecord(ps.idGen.ID(msg))
 
 	// defensive check that this is the first delivery trace -- delivery status should be unknown
 	if drec.status != deliveryUnknown {
@@ -749,7 +756,7 @@ func (ps *peerScore) RejectMessage(msg *Message, reason string) {
 		return
 	}
 
-	drec := ps.deliveries.getRecord(ps.msgID(msg.Message))
+	drec := ps.deliveries.getRecord(ps.idGen.ID(msg))
 
 	// defensive check that this is the first rejection trace -- delivery status should be unknown
 	if drec.status != deliveryUnknown {
@@ -789,7 +796,7 @@ func (ps *peerScore) DuplicateMessage(msg *Message) {
 	ps.Lock()
 	defer ps.Unlock()
 
-	drec := ps.deliveries.getRecord(ps.msgID(msg.Message))
+	drec := ps.deliveries.getRecord(ps.idGen.ID(msg))
 
 	_, ok := drec.peers[msg.ReceivedFrom]
 	if ok {
@@ -841,7 +848,7 @@ func (d *messageDeliveries) getRecord(id string) *deliveryRecord {
 	rec = &deliveryRecord{peers: make(map[peer.ID]struct{}), firstSeen: now}
 	d.records[id] = rec
 
-	entry := &deliveryEntry{id: id, expire: now.Add(TimeCacheDuration)}
+	entry := &deliveryEntry{id: id, expire: now.Add(d.seenMsgTTL)}
 	if d.tail != nil {
 		d.tail.next = entry
 		d.tail = entry
