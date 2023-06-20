@@ -8,6 +8,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	pool "github.com/libp2p/go-buffer-pool"
+	"github.com/libp2p/go-msgio/protoio"
 	"github.com/multiformats/go-varint"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -144,13 +145,17 @@ func (p *PubSub) handleNewPeerWithBackoff(ctx context.Context, pid peer.ID, back
 func (p *PubSub) handlePeerDead(s network.Stream) {
 	pid := s.Conn().RemotePeer()
 
-	_, err := s.Read([]byte{0})
-	if err == nil {
+	r := protoio.NewDelimitedReader(s, p.maxMessageSize)
+	rpc := new(RPC)
+	for {
+		err := r.ReadMsg(&rpc.RPC)
+		if err != nil {
+			p.notifyPeerDead(pid)
+			return
+		}
+
 		log.Debugf("unexpected message from %s", pid)
 	}
-
-	s.Reset()
-	p.notifyPeerDead(pid)
 }
 
 func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, outgoing <-chan *RPC) {
