@@ -5,7 +5,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/libp2p/go-libp2p-pubsub/timecache"
+	"github.com/multiversx/go-libp2p-pubsub/timecache"
 )
 
 // Blacklist is an interface for peer blacklisting.

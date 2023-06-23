@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
-	"github.com/libp2p/go-libp2p-pubsub/timecache"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
+	"github.com/multiversx/go-libp2p-pubsub/timecache"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/discovery"

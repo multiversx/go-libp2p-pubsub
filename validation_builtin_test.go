@@ -17,7 +17,7 @@ import (
 	"github.com/libp2p/go-msgio"
 	"github.com/multiformats/go-varint"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 )
 
 var rng *rand.Rand

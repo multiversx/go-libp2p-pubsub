@@ -8,11 +8,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	pool "github.com/libp2p/go-buffer-pool"
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-msgio"
 	"github.com/multiformats/go-varint"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 )
 
 // get the initial RPC containing all of our subscriptions to send to new peers
