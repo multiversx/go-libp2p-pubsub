@@ -664,6 +664,7 @@ func (p *PubSub) processLoop(ctx context.Context) {
 						p.notifyLeave(t, pid)
 					}
 				}
+				log.Debugf("removed peer due to blacklisting, peer %s", pid)
 				p.rt.RemovePeer(pid)
 			}
 

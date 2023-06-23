@@ -142,10 +142,13 @@ func (p *PubSub) handleNewPeerWithBackoff(ctx context.Context, pid peer.ID, back
 func (p *PubSub) handlePeerDead(s network.Stream) {
 	pid := s.Conn().RemotePeer()
 
-	_, err := s.Read([]byte{0})
+	buff := []byte{0}
+	_, err := s.Read(buff)
 	if err == nil {
 		log.Debugf("unexpected message from %s", pid)
 	}
+
+	log.Debugf("peer dead %s, error: %v, buff: %x", pid, err, buff)
 
 	s.Reset()
 	p.notifyPeerDead(pid)
@@ -164,7 +167,10 @@ func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, ou
 			return err
 		}
 
+		log.Debugf("trying to write message to %s...", s.Conn().RemotePeer())
 		_, err = s.Write(buf)
+		log.Debugf("message wrote to %s, error: %v", s.Conn().RemotePeer(), err)
+
 		return err
 	}
 
