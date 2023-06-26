@@ -10,7 +10,7 @@ import (
 	pool "github.com/libp2p/go-buffer-pool"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-msgio"
+	"github.com/libp2p/go-msgio/protoio"
 	"github.com/multiformats/go-varint"
 	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 )
@@ -59,11 +59,11 @@ func (p *PubSub) handleNewStream(s network.Stream) {
 		p.inboundStreamsMx.Unlock()
 	}()
 
-	r := msgio.NewVarintReaderSize(s, p.maxMessageSize)
+	r := protoio.NewDelimitedReader(s, p.maxMessageSize)
 	for {
-		msgbytes, err := r.ReadMsg()
+		rpc := new(RPC)
+		err := r.ReadMsg(&rpc.RPC)
 		if err != nil {
-			r.ReleaseMsg(msgbytes)
 			if err != io.EOF {
 				s.Reset()
 				log.Debugf("error reading rpc from %s: %s", s.Conn().RemotePeer(), err)
@@ -73,15 +73,6 @@ func (p *PubSub) handleNewStream(s network.Stream) {
 				s.Close()
 			}
 
-			return
-		}
-
-		rpc := new(RPC)
-		err = rpc.Unmarshal(msgbytes)
-		r.ReleaseMsg(msgbytes)
-		if err != nil {
-			s.Reset()
-			log.Warnf("bogus rpc from %s: %s", s.Conn().RemotePeer(), err)
 			return
 		}
 
