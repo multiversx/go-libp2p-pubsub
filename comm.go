@@ -1,17 +1,15 @@
 package pubsub
 
 import (
+	"bufio"
 	"context"
-	"encoding/binary"
 	"io"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	pool "github.com/libp2p/go-buffer-pool"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-msgio/protoio"
-	"github.com/multiformats/go-varint"
 	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 )
 
@@ -146,23 +144,16 @@ func (p *PubSub) handlePeerDead(s network.Stream) {
 }
 
 func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, outgoing <-chan *RPC) {
-	writeRpc := func(rpc *RPC) error {
-		size := uint64(rpc.Size())
+	bufw := bufio.NewWriter(s)
+	wc := protoio.NewDelimitedWriter(bufw)
 
-		buf := pool.Get(varint.UvarintSize(size) + int(size))
-		defer pool.Put(buf)
-
-		n := binary.PutUvarint(buf, size)
-		_, err := rpc.MarshalTo(buf[n:])
+	writeMsg := func(msg proto.Message) error {
+		err := wc.WriteMsg(msg)
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("trying to write message to %s...", s.Conn().RemotePeer())
-		_, err = s.Write(buf)
-		log.Debugf("message wrote to %s, error: %v", s.Conn().RemotePeer(), err)
-
-		return err
+		return bufw.Flush()
 	}
 
 	defer s.Close()
@@ -173,7 +164,7 @@ func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, ou
 				return
 			}
 
-			err := writeRpc(rpc)
+			err := writeMsg(&rpc.RPC)
 			if err != nil {
 				s.Reset()
 				log.Debugf("writing message to %s: %s", s.Conn().RemotePeer(), err)
