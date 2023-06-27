@@ -46,7 +46,7 @@ This repo contains the canonical pubsub implementation for libp2p. We currently 
 ## Install
 
 ```
-go get github.com/libp2p/go-libp2p-pubsub
+go get github.com/multiversx/go-libp2p-pubsub
 ```
 
 ## Usage

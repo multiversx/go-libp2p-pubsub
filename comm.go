@@ -1,20 +1,16 @@
 package pubsub
 
 import (
+	"bufio"
 	"context"
-	"encoding/binary"
 	"io"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	pool "github.com/libp2p/go-buffer-pool"
-	"github.com/multiformats/go-varint"
-
-	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-msgio"
-
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	"github.com/libp2p/go-msgio/protoio"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
+	"github.com/multiversx/go-libp2p/core/network"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
 
 // get the initial RPC containing all of our subscriptions to send to new peers
@@ -61,11 +57,11 @@ func (p *PubSub) handleNewStream(s network.Stream) {
 		p.inboundStreamsMx.Unlock()
 	}()
 
-	r := msgio.NewVarintReaderSize(s, p.maxMessageSize)
+	r := protoio.NewDelimitedReader(s, p.maxMessageSize)
 	for {
-		msgbytes, err := r.ReadMsg()
+		rpc := new(RPC)
+		err := r.ReadMsg(&rpc.RPC)
 		if err != nil {
-			r.ReleaseMsg(msgbytes)
 			if err != io.EOF {
 				s.Reset()
 				log.Debugf("error reading rpc from %s: %s", s.Conn().RemotePeer(), err)
@@ -75,15 +71,6 @@ func (p *PubSub) handleNewStream(s network.Stream) {
 				s.Close()
 			}
 
-			return
-		}
-
-		rpc := new(RPC)
-		err = rpc.Unmarshal(msgbytes)
-		r.ReleaseMsg(msgbytes)
-		if err != nil {
-			s.Reset()
-			log.Warnf("bogus rpc from %s: %s", s.Conn().RemotePeer(), err)
 			return
 		}
 
@@ -144,30 +131,29 @@ func (p *PubSub) handleNewPeerWithBackoff(ctx context.Context, pid peer.ID, back
 func (p *PubSub) handlePeerDead(s network.Stream) {
 	pid := s.Conn().RemotePeer()
 
-	_, err := s.Read([]byte{0})
+	buff := []byte{0}
+	_, err := s.Read(buff)
 	if err == nil {
 		log.Debugf("unexpected message from %s", pid)
 	}
+
+	log.Debugf("peer dead %s, error: %v, buff: %x", pid, err, buff)
 
 	s.Reset()
 	p.notifyPeerDead(pid)
 }
 
 func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, outgoing <-chan *RPC) {
-	writeRpc := func(rpc *RPC) error {
-		size := uint64(rpc.Size())
+	bufw := bufio.NewWriter(s)
+	wc := protoio.NewDelimitedWriter(bufw)
 
-		buf := pool.Get(varint.UvarintSize(size) + int(size))
-		defer pool.Put(buf)
-
-		n := binary.PutUvarint(buf, size)
-		_, err := rpc.MarshalTo(buf[n:])
+	writeMsg := func(msg proto.Message) error {
+		err := wc.WriteMsg(msg)
 		if err != nil {
 			return err
 		}
 
-		_, err = s.Write(buf)
-		return err
+		return bufw.Flush()
 	}
 
 	defer s.Close()
@@ -178,7 +164,7 @@ func (p *PubSub) handleSendingMessages(ctx context.Context, s network.Stream, ou
 				return
 			}
 
-			err := writeRpc(rpc)
+			err := writeMsg(&rpc.RPC)
 			if err != nil {
 				s.Reset()
 				log.Debugf("writing message to %s: %s", s.Conn().RemotePeer(), err)

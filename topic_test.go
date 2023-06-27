@@ -9,13 +9,97 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
-	tnet "github.com/libp2p/go-libp2p-testing/net"
-	"github.com/libp2p/go-libp2p/core/peer"
+	ma "github.com/multiformats/go-multiaddr"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
+	ci "github.com/multiversx/go-libp2p/core/crypto"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
+
+// ZeroLocalTCPAddress is the "zero" tcp local multiaddr. This means:
+//
+//	/ip4/127.0.0.1/tcp/0
+var ZeroLocalTCPAddress, _ = ma.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
+var globalSeed int64
+
+func RandTestKeyPair(typ, bits int) (ci.PrivKey, ci.PubKey, error) {
+	// workaround for low time resolution
+	seed := atomic.AddInt64(&globalSeed, 1)
+	return SeededTestKeyPair(typ, bits, seed)
+}
+
+func SeededTestKeyPair(typ, bits int, seed int64) (ci.PrivKey, ci.PubKey, error) {
+	r := rand.New(rand.NewSource(seed))
+	return ci.GenerateKeyPairWithReader(typ, bits, r)
+}
+
+// PeerNetParams is a struct to bundle together the four things
+// you need to run a connection with a peer: id, 2keys, and addr.
+type PeerNetParams struct {
+	ID      peer.ID
+	PrivKey ci.PrivKey
+	PubKey  ci.PubKey
+	Addr    ma.Multiaddr
+}
+
+func (p *PeerNetParams) checkKeys() error {
+	if !p.ID.MatchesPrivateKey(p.PrivKey) {
+		return errors.New("p.ID does not match p.PrivKey")
+	}
+
+	if !p.ID.MatchesPublicKey(p.PubKey) {
+		return errors.New("p.ID does not match p.PubKey")
+	}
+
+	buf := new(bytes.Buffer)
+	buf.Write([]byte("hello world. this is me, I swear."))
+	b := buf.Bytes()
+
+	sig, err := p.PrivKey.Sign(b)
+	if err != nil {
+		return fmt.Errorf("sig signing failed: %s", err)
+	}
+
+	sigok, err := p.PubKey.Verify(b, sig)
+	if err != nil {
+		return fmt.Errorf("sig verify failed: %s", err)
+	}
+	if !sigok {
+		return fmt.Errorf("sig verify failed: sig invalid")
+	}
+
+	return nil // ok. move along.
+}
+
+func RandPeerNetParamsOrFatal(t *testing.T) PeerNetParams {
+	p, err := RandPeerNetParams()
+	if err != nil {
+		t.Fatal(err)
+		return PeerNetParams{} // TODO return nil
+	}
+	return *p
+}
+
+func RandPeerNetParams() (*PeerNetParams, error) {
+	var p PeerNetParams
+	var err error
+	p.Addr = ZeroLocalTCPAddress
+	p.PrivKey, p.PubKey, err = RandTestKeyPair(ci.Ed25519, 0)
+	if err != nil {
+		return nil, err
+	}
+	p.ID, err = peer.IDFromPublicKey(p.PubKey)
+	if err != nil {
+		return nil, err
+	}
+	if err := p.checkKeys(); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
 
 func getTopics(psubs []*PubSub, topicID string, opts ...TopicOpt) []*Topic {
 	topics := make([]*Topic, len(psubs))
@@ -931,7 +1015,7 @@ func TestTopicPublishWithKeyInvalidParameters(t *testing.T) {
 	const topic = "foobar"
 	const numHosts = 5
 
-	virtualPeer := tnet.RandPeerNetParamsOrFatal(t)
+	virtualPeer := RandPeerNetParamsOrFatal(t)
 	hosts := getNetHosts(t, ctx, numHosts)
 	topics := getTopics(getPubsubs(ctx, hosts), topic)
 
@@ -958,7 +1042,7 @@ func TestTopicRelayPublishWithKey(t *testing.T) {
 	const topic = "foobar"
 	const numHosts = 5
 
-	virtualPeer := tnet.RandPeerNetParamsOrFatal(t)
+	virtualPeer := RandPeerNetParamsOrFatal(t)
 	hosts := getNetHosts(t, ctx, numHosts)
 	topics := getTopics(getPubsubs(ctx, hosts), topic)
 

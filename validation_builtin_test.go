@@ -11,13 +11,12 @@ import (
 	"time"
 
 	pool "github.com/libp2p/go-buffer-pool"
-	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-msgio"
 	"github.com/multiformats/go-varint"
-
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
+	"github.com/multiversx/go-libp2p/core/host"
+	"github.com/multiversx/go-libp2p/core/network"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
 
 var rng *rand.Rand

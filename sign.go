@@ -3,10 +3,10 @@ package pubsub
 import (
 	"fmt"
 
-	pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 
-	"github.com/libp2p/go-libp2p/core/crypto"
-	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/multiversx/go-libp2p/core/crypto"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
 
 // MessageSignaturePolicy describes if signatures are produced, expected, and/or verified.
