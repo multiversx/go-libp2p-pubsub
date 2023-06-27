@@ -3,7 +3,7 @@ package pubsub
 import (
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/multiversx/go-libp2p/core/peer"
 
 	"github.com/multiversx/go-libp2p-pubsub/timecache"
 )

@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"sync"
 
-	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
 
 // PeerMetadataStore is an interface for storing and retrieving per peer metadata

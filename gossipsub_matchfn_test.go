@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/multiversx/go-libp2p/core/protocol"
 )
 
 func TestGossipSubMatchingFn(t *testing.T) {

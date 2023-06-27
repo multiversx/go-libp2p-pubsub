@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-msgio/protoio"
 	pb "github.com/multiversx/go-libp2p-pubsub/pb"
+	"github.com/multiversx/go-libp2p/core/network"
+	"github.com/multiversx/go-libp2p/core/peer"
 )
 
 // get the initial RPC containing all of our subscriptions to send to new peers

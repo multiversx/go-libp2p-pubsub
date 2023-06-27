@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/libp2p/go-libp2p/core/host"
-	swarmt "github.com/libp2p/go-libp2p/p2p/net/swarm/testing"
+	"github.com/multiversx/go-libp2p/core/host"
+	swarmt "github.com/multiversx/go-libp2p/p2p/net/swarm/testing"
 
-	"github.com/libp2p/go-libp2p/core/peer"
-	bhost "github.com/libp2p/go-libp2p/p2p/host/blank"
-	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
+	"github.com/multiversx/go-libp2p/core/peer"
+	bhost "github.com/multiversx/go-libp2p/p2p/host/blank"
+	"github.com/multiversx/go-libp2p/p2p/net/connmgr"
 )
 
 func TestGossipsubConnTagMessageDeliveries(t *testing.T) {

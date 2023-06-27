@@ -15,13 +15,13 @@ import (
 
 	pb "github.com/multiversx/go-libp2p-pubsub/pb"
 
-	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/multiversx/go-libp2p/core/host"
+	"github.com/multiversx/go-libp2p/core/network"
+	"github.com/multiversx/go-libp2p/core/peer"
+	"github.com/multiversx/go-libp2p/core/protocol"
 
-	bhost "github.com/libp2p/go-libp2p/p2p/host/blank"
-	swarmt "github.com/libp2p/go-libp2p/p2p/net/swarm/testing"
+	bhost "github.com/multiversx/go-libp2p/p2p/host/blank"
+	swarmt "github.com/multiversx/go-libp2p/p2p/net/swarm/testing"
 
 	"github.com/libp2p/go-msgio/protoio"
 )
